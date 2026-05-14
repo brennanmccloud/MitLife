@@ -30,6 +30,7 @@ import {
 } from './game/actions';
 import { deleteSave, loadGame, loadPowers, savePowers, saveGame } from './game/saveSystem';
 import { uid } from './utils/rand';
+import { applyTheme, loadTheme, saveTheme, type Theme } from './utils/theme';
 
 function clampStats(c: Character) {
   c.core.happiness = Math.max(0, Math.min(100, c.core.happiness));
@@ -50,6 +51,23 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [cradleFor, setCradleFor] = useState<string | null>(null);
   const [hasSave] = useState<boolean>(!!initialSave?.character);
+  const [theme, setTheme] = useState<Theme>('light');
+
+  // Initialize theme on mount and apply to <html>
+  useEffect(() => {
+    const t = loadTheme();
+    setTheme(t);
+    applyTheme(t);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((cur) => {
+      const next: Theme = cur === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      saveTheme(next);
+      return next;
+    });
+  };
   const flashRef = useRef<HTMLDivElement | null>(null);
 
   // Persist powers
@@ -267,6 +285,8 @@ export default function App() {
     <div className="phone-frame relative pb-2">
       <Header
         character={character}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onSave={onSave}
         onSettings={() => {
           if (confirm('Return to start menu? Your current life will be saved.')) {

@@ -25,21 +25,44 @@ interface Props {
 export function BottomNav({ active, onChange, onAgeUp, ageUpDisabled }: Props) {
   return (
     <div className="sticky bottom-0 left-0 right-0 pointer-events-none">
-      <div className="pointer-events-auto px-3 pb-3 pt-2 bg-gradient-to-t from-white via-white/95 to-white/0">
+      <div
+        className="pointer-events-auto px-3 pb-3 pt-2"
+        style={{
+          background:
+            'linear-gradient(to top, color-mix(in srgb, var(--surface) 95%, transparent) 0%, color-mix(in srgb, var(--surface) 70%, transparent) 60%, transparent 100%)',
+        }}
+      >
         <div className="relative">
-          <div className="grid grid-cols-6 gap-1 bg-white/90 backdrop-blur rounded-2xl shadow-card border border-slate-100 px-1 py-1.5">
+          <div
+            className="grid grid-cols-6 gap-1 rounded-2xl px-1 py-1.5 backdrop-blur-xl"
+            style={{
+              background: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+              border: '1px solid var(--border-soft)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
             {TABS.map((t) => {
               const isActive = active === t.id;
               return (
                 <button
                   key={t.id}
                   onClick={() => onChange(t.id)}
-                  className={`flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-95 ${
-                    isActive ? 'bg-mit-100 text-mit-700' : 'text-slate-500 hover:text-mit-600'
-                  }`}
+                  className="flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-90"
+                  style={{
+                    background: isActive
+                      ? 'color-mix(in srgb, var(--accent) 18%, transparent)'
+                      : 'transparent',
+                    color: isActive ? 'var(--accent)' : 'var(--text-mute)',
+                  }}
                 >
                   <span className="text-lg leading-none">{t.icon}</span>
-                  <span className="text-[10px] font-bold tracking-wide mt-0.5">{t.label}</span>
+                  <span className="text-[10px] font-extrabold tracking-wide mt-0.5">{t.label}</span>
+                  {isActive && (
+                    <span
+                      className="mt-1 block w-1.5 h-1.5 rounded-full"
+                      style={{ background: 'var(--accent)' }}
+                    />
+                  )}
                 </button>
               );
             })}
@@ -47,15 +70,24 @@ export function BottomNav({ active, onChange, onAgeUp, ageUpDisabled }: Props) {
           <button
             onClick={onAgeUp}
             disabled={ageUpDisabled}
-            className={`absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full grid place-items-center text-white font-extrabold text-xl shadow-pop transition active:scale-90 ${
-              ageUpDisabled
-                ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-gradient-to-br from-mit-400 to-mit-600 hover:scale-105'
+            className={`absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full grid place-items-center text-white font-black text-xl transition active:scale-90 ${
+              ageUpDisabled ? 'cursor-not-allowed' : 'hover:scale-105'
             }`}
+            style={{
+              background: ageUpDisabled
+                ? 'var(--surface-3)'
+                : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
+              boxShadow: ageUpDisabled ? 'none' : 'var(--shadow-pop)',
+              color: ageUpDisabled ? 'var(--text-mute)' : '#fff',
+              border: '3px solid var(--surface)',
+            }}
             aria-label="Age up"
             title="Age Up"
           >
-            +1
+            <div className="flex flex-col items-center leading-none">
+              <span className="text-[18px]">+1</span>
+              <span className="text-[9px] font-bold mt-0.5 opacity-80">YEAR</span>
+            </div>
           </button>
         </div>
       </div>

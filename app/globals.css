@@ -6,6 +6,40 @@
 
 :root {
   color-scheme: light;
+  --bg-1: #f0fbfc;
+  --bg-2: #ede9fe;
+  --bg-3: #f7fafc;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-mute: #94a3b8;
+  --border: #e2e8f0;
+  --border-soft: #f1f5f9;
+  --accent: #0ea5b7;
+  --accent-2: #8b5cf6;
+  --shadow-card: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --shadow-pop: 0 12px 30px -12px rgba(14, 165, 183, 0.45);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-1: #0b1220;
+  --bg-2: #1a103a;
+  --bg-3: #050a16;
+  --surface: #111827;
+  --surface-2: #0f172a;
+  --surface-3: #1e293b;
+  --text: #f8fafc;
+  --text-soft: #cbd5e1;
+  --text-mute: #64748b;
+  --border: #1e293b;
+  --border-soft: #111827;
+  --accent: #22d3ee;
+  --accent-2: #a78bfa;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 12px 30px -12px rgba(34, 211, 238, 0.55);
 }
 
 html,
@@ -15,32 +49,57 @@ body {
 
 body {
   font-family: 'Nunito', system-ui, sans-serif;
-  background: radial-gradient(circle at 0% 0%, #e0f7fa 0%, transparent 45%),
-    radial-gradient(circle at 100% 100%, #ede9fe 0%, transparent 45%),
-    #f7fafc;
-  color: #0f172a;
+  background:
+    radial-gradient(circle at 0% 0%, var(--bg-1) 0%, transparent 45%),
+    radial-gradient(circle at 100% 100%, var(--bg-2) 0%, transparent 45%),
+    var(--bg-3);
+  color: var(--text);
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-card p-4;
+    background: var(--surface);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-card);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+  }
+  .card-2 {
+    background: var(--surface-2);
+    border-radius: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-soft);
+  }
+  .text-soft {
+    color: var(--text-soft);
+  }
+  .text-mute {
+    color: var(--text-mute);
   }
   .pill-btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full font-bold transition active:scale-[0.97];
   }
   .pill-btn-primary {
-    @apply pill-btn bg-mit-500 text-white shadow-pop hover:bg-mit-600;
+    @apply pill-btn text-white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: var(--shadow-pop);
   }
   .pill-btn-ghost {
-    @apply pill-btn bg-white text-mit-700 border border-mit-200 hover:bg-mit-50;
+    @apply pill-btn;
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--border);
   }
   .pill-btn-danger {
     @apply pill-btn bg-rose-500 text-white hover:bg-rose-600;
   }
   .pill-btn-violet {
-    @apply pill-btn bg-plum-500 text-white hover:bg-plum-600;
+    @apply pill-btn text-white;
+    background: linear-gradient(135deg, var(--accent-2), #ec4899);
   }
   .chip {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full;
@@ -50,6 +109,25 @@ body {
   }
   .scroll-no-bar {
     scrollbar-width: none;
+  }
+  .timeline {
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+  .glow-ring {
+    box-shadow: 0 0 0 4px rgba(14, 165, 183, 0.18), 0 12px 30px -12px rgba(14, 165, 183, 0.5);
+  }
+  html[data-theme='dark'] .glow-ring {
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.18), 0 12px 30px -12px rgba(34, 211, 238, 0.5);
   }
 }
 
@@ -62,4 +140,35 @@ body {
   margin: 0 auto;
   min-height: 100dvh;
   position: relative;
+}
+
+/* Dashboard hero background — subtle aurora */
+.hero-aurora {
+  position: relative;
+  overflow: hidden;
+}
+.hero-aurora::before,
+.hero-aurora::after {
+  content: '';
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--accent), transparent 65%);
+  opacity: 0.25;
+  filter: blur(20px);
+  pointer-events: none;
+}
+.hero-aurora::after {
+  inset: auto auto -40% -10%;
+  background: radial-gradient(circle, var(--accent-2), transparent 65%);
+  opacity: 0.22;
+}
+
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(34, 211, 238, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 92% 100%, rgba(167, 139, 250, 0.18) 0%, transparent 40%),
+    var(--bg-3);
 }
