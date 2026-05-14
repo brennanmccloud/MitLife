@@ -1,7 +1,16 @@
 export type AgeStage = 'baby' | 'child' | 'teen' | 'adult' | 'older' | 'elder';
 export type Gender = 'female' | 'male' | 'nonbinary';
-export type HairColor = 'black' | 'brown' | 'blonde' | 'red' | 'gray' | 'pink' | 'blue';
+export type HairColor = 'black' | 'brown' | 'blonde' | 'red' | 'gray' | 'pink' | 'blue' | 'silver' | 'auburn' | 'mint' | 'lavender';
 export type SkinTone = 'porcelain' | 'sand' | 'tan' | 'bronze' | 'umber' | 'ebony';
+export type HairStyle = 'short' | 'crop' | 'long' | 'wavy' | 'curly' | 'bun' | 'ponytail' | 'mohawk' | 'bald' | 'afro' | 'pixie' | 'braids';
+export type EyeColor = 'brown' | 'blue' | 'green' | 'hazel' | 'gray' | 'amber' | 'violet';
+export type EyeShape = 'round' | 'almond' | 'narrow' | 'wide';
+export type BrowShape = 'soft' | 'thick' | 'arched' | 'thin';
+export type FacialHair = 'none' | 'stubble' | 'goatee' | 'mustache' | 'beard' | 'fullBeard';
+export type Glasses = 'none' | 'round' | 'square' | 'sunglasses' | 'reading';
+export type Earrings = 'none' | 'studs' | 'hoops' | 'drops';
+export type Lipstick = 'none' | 'pink' | 'red' | 'plum' | 'nude';
+export type Outfit = 'casual' | 'hoodie' | 'tshirt' | 'dress' | 'suit' | 'jersey' | 'labCoat' | 'prisonStripes' | 'fitness' | 'crown' | 'goth';
 
 export type AvatarAccessory =
   | 'none'
@@ -15,8 +24,22 @@ export type AvatarAccessory =
 
 export interface AvatarLook {
   hair: HairColor;
+  hairStyle: HairStyle;
   skin: SkinTone;
   gender: Gender;
+  eyeColor: EyeColor;
+  eyeShape: EyeShape;
+  brow: BrowShape;
+  facialHair: FacialHair;
+  glasses: Glasses;
+  earrings: Earrings;
+  lipstick: Lipstick;
+  freckles: boolean;
+  blush: boolean;
+  tattoo: boolean;
+  piercing: boolean;
+  outfit: Outfit;
+  // legacy / status overrides shown on top of outfit
   accessory: AvatarAccessory;
 }
 

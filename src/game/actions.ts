@@ -3,8 +3,10 @@ import type { GameState, PowerFlags } from '../types/GameState';
 import { REGULAR_CAREERS, SPECIAL_CAREERS, type CareerDef, COLLEGE_MAJORS } from '../data/careers';
 import { chance, clamp, pick, rangeInt, uid } from '../utils/rand';
 import { logEntry, recomputeStatus } from './ageUp';
-import { randomFirstName, randomLastName } from '../data/names';
+import { randomFirstName, randomLastName, randomPetName } from '../data/names';
 import { COUNTRIES, getCountry } from '../data/countries';
+import { randomAvatar } from './createCharacter';
+import type { HairColor, HairStyle, Lipstick, Outfit } from '../types/Character';
 
 export interface ActionResult {
   ok: boolean;
@@ -260,7 +262,7 @@ export function startDating(c: Character, powers: PowerFlags): ActionResult {
     age: c.age + rangeInt(-3, 4),
     alive: true,
     bond: rangeInt(40, 70) + (powers.perfectCharm ? 20 : 0),
-    avatar: { hair: pick(['black', 'brown', 'blonde', 'red', 'pink']), skin: pick(['porcelain', 'sand', 'tan', 'bronze', 'umber', 'ebony']), gender, accessory: 'none' },
+    avatar: randomAvatar(gender),
     stats: {
       looks: rangeInt(30, 95),
       intelligence: rangeInt(20, 95),
@@ -344,7 +346,7 @@ export function adopt(c: Character): ActionResult {
     age: rangeInt(0, 5),
     alive: true,
     bond: 70,
-    avatar: { hair: pick(['black', 'brown', 'blonde', 'red']), skin: pick(['porcelain', 'sand', 'tan', 'bronze', 'umber', 'ebony']), gender, accessory: 'none' },
+    avatar: randomAvatar(gender),
     stats: {
       looks: rangeInt(30, 95),
       intelligence: rangeInt(30, 95),
@@ -460,6 +462,347 @@ export function emigrate(c: Character, country: string, powers: PowerFlags): Act
   c.job = null;
   c.journal.push(logEntry(c.age, 'family', '🛫', `Moved to ${target.name}.${powers.globalPass ? ' (Global Pass used)' : ''}`, 'good'));
   return { ok: true, message: `Now living in ${target.name}.`, tone: 'good' };
+}
+
+// ===== More Mind & Body =====
+export function yoga(c: Character): ActionResult {
+  c.core.happiness = C(c.core.happiness + rangeInt(2, 5));
+  c.core.health = C(c.core.health + rangeInt(2, 4));
+  c.hidden.willpower = C(c.hidden.willpower + 1);
+  c.journal.push(logEntry(c.age, 'health', '🧎', 'Went to a yoga class.', 'good'));
+  return { ok: true, message: 'Bendy.', tone: 'good' };
+}
+export function jog(c: Character): ActionResult {
+  if (c.age < 6) return { ok: false, message: 'Too young.' };
+  c.core.health = C(c.core.health + rangeInt(2, 5));
+  c.core.happiness = C(c.core.happiness + 1);
+  c.journal.push(logEntry(c.age, 'health', '🏃', 'Took a long jog through the neighborhood.', 'good'));
+  return { ok: true, message: 'Fresh air.', tone: 'good' };
+}
+export function therapy(c: Character): ActionResult {
+  if (c.age < 12) return { ok: false, message: 'Too young.' };
+  if (c.cash < 180) return { ok: false, message: 'Therapy costs $180/session.' };
+  c.cash -= 180;
+  c.core.happiness = C(c.core.happiness + rangeInt(6, 12));
+  c.hidden.willpower = C(c.hidden.willpower + 2);
+  c.hidden.craziness = C(c.hidden.craziness - 3);
+  c.journal.push(logEntry(c.age, 'health', '🛋️', 'Had a session with a therapist.', 'good'));
+  return { ok: true, message: 'Lighter.', tone: 'good' };
+}
+export function dentist(c: Character): ActionResult {
+  if (c.cash < 150) return { ok: false, message: 'Need $150.' };
+  c.cash -= 150;
+  c.core.appearance = C(c.core.appearance + rangeInt(1, 4));
+  c.core.health = C(c.core.health + 1);
+  c.journal.push(logEntry(c.age, 'health', '🦷', 'Got a dental cleaning.', 'good'));
+  return { ok: true, message: 'Pearly whites.', tone: 'good' };
+}
+export function checkup(c: Character): ActionResult {
+  if (c.cash < 80) return { ok: false, message: 'Need $80.' };
+  c.cash -= 80;
+  c.core.health = C(c.core.health + rangeInt(1, 3));
+  c.journal.push(logEntry(c.age, 'health', '🩺', 'Got a routine checkup.', 'good'));
+  return { ok: true, message: 'Cleared.', tone: 'good' };
+}
+export function spa(c: Character): ActionResult {
+  if (c.age < 14) return { ok: false, message: 'Too young.' };
+  if (c.cash < 220) return { ok: false, message: 'Need $220.' };
+  c.cash -= 220;
+  c.core.happiness = C(c.core.happiness + rangeInt(4, 8));
+  c.core.appearance = C(c.core.appearance + 2);
+  c.journal.push(logEntry(c.age, 'health', '💆', 'Spent the afternoon at a spa.', 'good'));
+  return { ok: true, message: 'Glowing.', tone: 'good' };
+}
+export function rehab(c: Character): ActionResult {
+  if (c.age < 16) return { ok: false, message: 'Too young.' };
+  if (c.cash < 3500) return { ok: false, message: 'Rehab program costs $3,500.' };
+  c.cash -= 3500;
+  c.core.health = C(c.core.health + rangeInt(10, 20));
+  c.hidden.willpower = C(c.hidden.willpower + 6);
+  c.journal.push(logEntry(c.age, 'health', '🌿', 'Finished a rehab program.', 'good'));
+  return { ok: true, message: 'Clean slate.', tone: 'good' };
+}
+export function sleepIn(c: Character): ActionResult {
+  c.core.happiness = C(c.core.happiness + rangeInt(2, 5));
+  c.core.health = C(c.core.health + 1);
+  c.journal.push(logEntry(c.age, 'health', '😴', 'Slept in late.', 'neutral'));
+  return { ok: true, message: 'Rested.', tone: 'good' };
+}
+
+// ===== Salon & body mods =====
+export function haircut(c: Character, style: HairStyle): ActionResult {
+  if (c.cash < 40) return { ok: false, message: 'Need $40.' };
+  c.cash -= 40;
+  c.avatar.hairStyle = style;
+  c.core.appearance = C(c.core.appearance + 2);
+  c.journal.push(logEntry(c.age, 'health', '💇', `Got a new haircut: ${style}.`, 'good'));
+  return { ok: true, message: 'Fresh cut.', tone: 'good' };
+}
+export function dyeHair(c: Character, color: HairColor): ActionResult {
+  if (c.cash < 90) return { ok: false, message: 'Need $90.' };
+  c.cash -= 90;
+  c.avatar.hair = color;
+  c.core.appearance = C(c.core.appearance + 1);
+  c.journal.push(logEntry(c.age, 'health', '🎨', `Dyed hair ${color}.`, 'good'));
+  return { ok: true, message: 'New look.', tone: 'good' };
+}
+export function getTattoo(c: Character): ActionResult {
+  if (c.age < 14) return { ok: false, message: 'Too young.' };
+  if (c.cash < 280) return { ok: false, message: 'Need $280.' };
+  c.cash -= 280;
+  c.avatar.tattoo = true;
+  if (chance(0.05)) {
+    c.core.health = C(c.core.health - 6);
+    c.journal.push(logEntry(c.age, 'health', '💉', 'Got a tattoo — and a nasty infection.', 'bad'));
+    return { ok: true, message: 'Infected.', tone: 'bad' };
+  }
+  c.journal.push(logEntry(c.age, 'health', '🖊️', 'Got a new tattoo.', 'good'));
+  return { ok: true, message: 'Inked.', tone: 'good' };
+}
+export function getPiercing(c: Character): ActionResult {
+  if (c.age < 12) return { ok: false, message: 'Too young.' };
+  if (c.cash < 60) return { ok: false, message: 'Need $60.' };
+  c.cash -= 60;
+  c.avatar.piercing = true;
+  c.journal.push(logEntry(c.age, 'health', '💎', 'Got a new piercing.', 'good'));
+  return { ok: true, message: 'Bling.', tone: 'good' };
+}
+export function makeover(c: Character, lipstick: Lipstick): ActionResult {
+  if (c.cash < 75) return { ok: false, message: 'Need $75.' };
+  c.cash -= 75;
+  c.avatar.lipstick = lipstick;
+  c.avatar.blush = true;
+  c.core.appearance = C(c.core.appearance + 2);
+  c.journal.push(logEntry(c.age, 'health', '💄', 'Booked a full makeover.', 'good'));
+  return { ok: true, message: 'Glam.', tone: 'good' };
+}
+export function newOutfit(c: Character, outfit: Outfit): ActionResult {
+  if (c.cash < 120) return { ok: false, message: 'Need $120.' };
+  c.cash -= 120;
+  c.avatar.outfit = outfit;
+  c.core.appearance = C(c.core.appearance + 1);
+  c.core.happiness = C(c.core.happiness + 2);
+  c.journal.push(logEntry(c.age, 'health', '👗', 'Bought a new outfit.', 'good'));
+  return { ok: true, message: 'Drip.', tone: 'good' };
+}
+
+// ===== Hobbies =====
+export function paint(c: Character): ActionResult {
+  c.core.happiness = C(c.core.happiness + rangeInt(2, 5));
+  c.hidden.actingTalent = C(c.hidden.actingTalent + 1);
+  c.journal.push(logEntry(c.age, 'chaos', '🎨', 'Spent the day painting.', 'good'));
+  return { ok: true, message: 'Creative.', tone: 'good' };
+}
+export function practiceMusic(c: Character): ActionResult {
+  c.hidden.musicTalent = C(c.hidden.musicTalent + rangeInt(2, 5));
+  c.core.happiness = C(c.core.happiness + 1);
+  c.journal.push(logEntry(c.age, 'chaos', '🎸', 'Practiced an instrument.', 'good'));
+  return { ok: true, message: 'Tighter.', tone: 'good' };
+}
+export function writeStory(c: Character): ActionResult {
+  c.core.intelligence = C(c.core.intelligence + rangeInt(1, 3));
+  c.core.happiness = C(c.core.happiness + 1);
+  c.journal.push(logEntry(c.age, 'chaos', '✍️', 'Wrote pages of an unfinished novel.', 'good'));
+  return { ok: true, message: 'Wordy.', tone: 'good' };
+}
+export function code(c: Character): ActionResult {
+  if (c.age < 8) return { ok: false, message: 'Too young.' };
+  c.core.intelligence = C(c.core.intelligence + rangeInt(2, 4));
+  c.hidden.businessTalent = C(c.hidden.businessTalent + 1);
+  c.journal.push(logEntry(c.age, 'chaos', '💻', 'Spent the day coding side projects.', 'good'));
+  return { ok: true, message: 'Built something.', tone: 'good' };
+}
+export function photography(c: Character): ActionResult {
+  c.core.happiness = C(c.core.happiness + 2);
+  c.extra.fame = C(c.extra.fame + 1);
+  c.journal.push(logEntry(c.age, 'chaos', '📷', 'Wandered around taking photos.', 'good'));
+  return { ok: true, message: 'Snap.', tone: 'good' };
+}
+export function streamOnline(c: Character): ActionResult {
+  if (c.age < 13) return { ok: false, message: 'Too young.' };
+  const bump = rangeInt(1, 5);
+  c.extra.fame = C(c.extra.fame + bump);
+  const tips = chance(0.3) ? rangeInt(20, 600) : 0;
+  c.cash += tips;
+  c.journal.push(logEntry(c.age, 'fame', '🎮', `Streamed online${tips ? ` and got $${tips} in tips.` : '.'}`, 'good'));
+  return { ok: true, message: tips ? `+$${tips} tips.` : 'Streamed.', tone: 'good' };
+}
+export function fishing(c: Character): ActionResult {
+  if (c.age < 6) return { ok: false, message: 'Too young.' };
+  c.core.happiness = C(c.core.happiness + 3);
+  if (chance(0.2)) {
+    const win = rangeInt(20, 400);
+    c.cash += win;
+    c.journal.push(logEntry(c.age, 'chaos', '🎣', `Caught a prize fish worth $${win}.`, 'good'));
+    return { ok: true, message: `+$${win}.`, tone: 'good' };
+  }
+  c.journal.push(logEntry(c.age, 'chaos', '🎣', 'Went fishing. Caught a vibe and not much else.', 'neutral'));
+  return { ok: true, message: 'Peaceful.', tone: 'good' };
+}
+export function hiking(c: Character): ActionResult {
+  if (c.age < 4) return { ok: false, message: 'Too young.' };
+  c.core.health = C(c.core.health + rangeInt(2, 5));
+  c.core.happiness = C(c.core.happiness + 3);
+  c.journal.push(logEntry(c.age, 'chaos', '🥾', 'Went on a long hike.', 'good'));
+  return { ok: true, message: 'Refreshed.', tone: 'good' };
+}
+export function concert(c: Character): ActionResult {
+  if (c.age < 12) return { ok: false, message: 'Too young.' };
+  if (c.cash < 180) return { ok: false, message: 'Need $180.' };
+  c.cash -= 180;
+  c.core.happiness = C(c.core.happiness + rangeInt(6, 10));
+  c.journal.push(logEntry(c.age, 'chaos', '🎤', 'Went to a concert.', 'good'));
+  return { ok: true, message: 'Euphoric.', tone: 'good' };
+}
+export function festival(c: Character): ActionResult {
+  if (c.age < 14) return { ok: false, message: 'Too young.' };
+  if (c.cash < 320) return { ok: false, message: 'Need $320.' };
+  c.cash -= 320;
+  c.core.happiness = C(c.core.happiness + rangeInt(8, 14));
+  if (chance(0.1)) {
+    c.core.health = C(c.core.health - 5);
+    c.journal.push(logEntry(c.age, 'chaos', '🎪', 'Festival was unreal — came back with a flu though.', 'neutral'));
+    return { ok: true, message: 'Worth it.', tone: 'neutral' };
+  }
+  c.journal.push(logEntry(c.age, 'chaos', '🎪', 'Spent a weekend at a music festival.', 'good'));
+  return { ok: true, message: 'Unreal.', tone: 'good' };
+}
+
+// ===== Charity =====
+export function donate(c: Character, amount: number): ActionResult {
+  if (c.cash < amount) return { ok: false, message: 'Not enough cash.' };
+  c.cash -= amount;
+  c.hidden.karma = C(c.hidden.karma + Math.min(15, amount / 200));
+  c.core.happiness = C(c.core.happiness + Math.min(6, amount / 500));
+  c.journal.push(logEntry(c.age, 'chaos', '🤲', `Donated $${amount.toLocaleString()} to charity.`, 'good'));
+  return { ok: true, message: 'Kind.', tone: 'good' };
+}
+export function volunteer(c: Character): ActionResult {
+  if (c.age < 12) return { ok: false, message: 'Too young.' };
+  c.hidden.karma = C(c.hidden.karma + 5);
+  c.core.happiness = C(c.core.happiness + 3);
+  c.journal.push(logEntry(c.age, 'chaos', '🌱', 'Volunteered at a community center.', 'good'));
+  return { ok: true, message: 'Helped out.', tone: 'good' };
+}
+
+// ===== Licenses =====
+export function getLicense(c: Character, kind: 'driver' | 'pilot' | 'boat' | 'fishing' | 'hunting' | 'gun'): ActionResult {
+  const reqs: Record<string, { age: number; cost: number; emoji: string }> = {
+    driver: { age: 16, cost: 60, emoji: '🚗' },
+    pilot: { age: 21, cost: 5000, emoji: '✈️' },
+    boat: { age: 16, cost: 120, emoji: '⛵' },
+    fishing: { age: 6, cost: 25, emoji: '🎣' },
+    hunting: { age: 14, cost: 80, emoji: '🦌' },
+    gun: { age: 18, cost: 200, emoji: '🔫' },
+  };
+  const r = reqs[kind];
+  if (c.age < r.age) return { ok: false, message: 'Too young.' };
+  if (c.cash < r.cost) return { ok: false, message: `Need $${r.cost}.` };
+  c.cash -= r.cost;
+  c.journal.push(logEntry(c.age, 'chaos', r.emoji, `Got a ${kind} license.`, 'good'));
+  return { ok: true, message: 'Licensed.', tone: 'good' };
+}
+
+// ===== Religion / fortune teller =====
+export function attendService(c: Character): ActionResult {
+  c.hidden.willpower = C(c.hidden.willpower + 2);
+  c.hidden.karma = C(c.hidden.karma + 2);
+  c.core.happiness = C(c.core.happiness + 2);
+  c.journal.push(logEntry(c.age, 'chaos', '🕊️', 'Went to a spiritual service.', 'good'));
+  return { ok: true, message: 'Peaceful.', tone: 'good' };
+}
+export function fortuneTeller(c: Character): ActionResult {
+  if (c.age < 10) return { ok: false, message: 'Too young.' };
+  if (c.cash < 40) return { ok: false, message: 'Need $40.' };
+  c.cash -= 40;
+  const luckBump = rangeInt(-3, 6);
+  c.hidden.luck = C(c.hidden.luck + luckBump);
+  c.journal.push(logEntry(c.age, 'chaos', '🔮', luckBump >= 0 ? 'Fortune teller saw bright things ahead.' : 'Fortune teller saw clouds — and probably faked them.', luckBump >= 0 ? 'good' : 'bad'));
+  return { ok: true, message: luckBump >= 0 ? 'Lucky.' : 'Hmm.', tone: luckBump >= 0 ? 'good' : 'bad' };
+}
+
+// ===== Pets =====
+export function adoptPet(c: Character, kind: 'dog' | 'cat' | 'rabbit' | 'bird' | 'fish' | 'lizard'): ActionResult {
+  if (c.age < 6) return { ok: false, message: 'Too young.' };
+  if (c.cash < 250) return { ok: false, message: 'Need $250.' };
+  c.cash -= 250;
+  const icon = { dog: '🐶', cat: '🐱', rabbit: '🐰', bird: '🐦', fish: '🐠', lizard: '🦎' }[kind];
+  const pet: Relationship = {
+    id: uid('rel'),
+    name: randomPetName(),
+    role: 'pet',
+    age: 1,
+    alive: true,
+    bond: 80,
+    avatar: randomAvatar(pick(['female', 'male'] as const)),
+    stats: { looks: rangeInt(40, 95), intelligence: rangeInt(10, 60), money: 0, craziness: rangeInt(10, 80), loyalty: rangeInt(60, 100), temper: rangeInt(0, 60) },
+    notes: kind,
+  };
+  c.relationships.push(pet);
+  c.core.happiness = C(c.core.happiness + 8);
+  c.journal.push(logEntry(c.age, 'family', icon, `Adopted a ${kind} named ${pet.name}.`, 'good'));
+  return { ok: true, message: `Welcome ${pet.name}!`, tone: 'good' };
+}
+
+// ===== Gambling / finance extras =====
+export function sportsBet(c: Character, bet: number): ActionResult {
+  if (c.age < 18) return { ok: false, message: 'Too young.' };
+  if (c.cash < bet) return { ok: false, message: 'Not enough cash.' };
+  c.cash -= bet;
+  if (chance(0.42 + c.hidden.luck / 600)) {
+    const win = bet * rangeInt(2, 3);
+    c.cash += win;
+    c.journal.push(logEntry(c.age, 'money', '🏈', `Won a $${win.toLocaleString()} sports bet.`, 'good'));
+    return { ok: true, message: `Won $${win.toLocaleString()}!`, tone: 'good' };
+  }
+  c.journal.push(logEntry(c.age, 'money', '🏈', `Lost $${bet.toLocaleString()} on a bet.`, 'bad'));
+  return { ok: true, message: 'Lost.', tone: 'bad' };
+}
+export function dayTrade(c: Character, bet: number): ActionResult {
+  if (c.age < 18) return { ok: false, message: 'Too young.' };
+  if (c.cash < bet) return { ok: false, message: 'Not enough cash.' };
+  c.cash -= bet;
+  const smartsBoost = c.core.intelligence / 200;
+  if (chance(0.45 + smartsBoost)) {
+    const win = Math.round(bet * (1 + Math.random() * 0.4));
+    c.cash += win;
+    c.journal.push(logEntry(c.age, 'money', '📊', `Day-traded $${bet.toLocaleString()} → $${win.toLocaleString()}.`, 'good'));
+    return { ok: true, message: `+$${(win - bet).toLocaleString()}.`, tone: 'good' };
+  }
+  const back = Math.round(bet * (0.5 + Math.random() * 0.4));
+  c.cash += back;
+  c.journal.push(logEntry(c.age, 'money', '📉', `Day trade dropped $${bet.toLocaleString()} → $${back.toLocaleString()}.`, 'bad'));
+  return { ok: true, message: 'Took a hit.', tone: 'bad' };
+}
+
+// ===== Run for office / fame =====
+export function runForOffice(c: Character): ActionResult {
+  if (c.age < 25) return { ok: false, message: 'Too young to run.' };
+  if (c.cash < 50000) return { ok: false, message: 'Campaign costs $50,000.' };
+  c.cash -= 50000;
+  const support = (c.extra.fame + c.core.appearance + c.core.intelligence) / 3;
+  if (chance(0.3 + support / 300)) {
+    c.extra.respect = C(c.extra.respect + 25);
+    c.extra.fame = C(c.extra.fame + 15);
+    c.journal.push(logEntry(c.age, 'fame', '🏛️', 'Won a seat in local office!', 'epic'));
+    return { ok: true, message: 'Elected!', tone: 'good' };
+  }
+  c.journal.push(logEntry(c.age, 'fame', '🏛️', 'Lost the local election.', 'bad'));
+  return { ok: true, message: 'Lost.', tone: 'bad' };
+}
+export function postViralVideo(c: Character): ActionResult {
+  if (c.age < 13) return { ok: false, message: 'Too young.' };
+  if (chance(0.08 + c.hidden.luck / 500)) {
+    const bump = rangeInt(8, 25);
+    c.extra.fame = C(c.extra.fame + bump);
+    const earn = rangeInt(200, 8000);
+    c.cash += earn;
+    c.journal.push(logEntry(c.age, 'fame', '📹', `Video went viral! +${bump} fame, +$${earn}.`, 'epic'));
+    return { ok: true, message: `Viral! +$${earn}.`, tone: 'good' };
+  }
+  c.extra.fame = C(c.extra.fame + 1);
+  c.journal.push(logEntry(c.age, 'fame', '📹', 'Uploaded a video. Crickets.', 'neutral'));
+  return { ok: true, message: 'Posted.', tone: 'neutral' };
 }
 
 // ===== Crime =====

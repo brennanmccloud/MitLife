@@ -1,11 +1,19 @@
 import type {
   AvatarLook,
+  BrowShape,
   Character,
   CoreStats,
+  EyeColor,
+  EyeShape,
   ExtraStats,
+  FacialHair,
   Gender,
+  Glasses,
   HairColor,
+  HairStyle,
   HiddenStats,
+  Lipstick,
+  Outfit,
   Relationship,
   RelationshipStats,
   SkinTone,
@@ -22,21 +30,49 @@ export interface NewLifeOptions {
   gender?: Gender;
   country?: string;
   hair?: HairColor;
+  hairStyle?: HairStyle;
   skin?: SkinTone;
+  eyeColor?: EyeColor;
+  eyeShape?: EyeShape;
+  brow?: BrowShape;
+  facialHair?: FacialHair;
+  glasses?: Glasses;
+  outfit?: Outfit;
   wealth?: 'poor' | 'middle' | 'rich';
   talent?: keyof HiddenStats;
   customStats?: Partial<CoreStats & HiddenStats>;
+  fullAvatar?: AvatarLook;
   powers: PowerFlags;
 }
 
-const HAIRS: HairColor[] = ['black', 'brown', 'blonde', 'red', 'gray', 'pink', 'blue'];
-const SKINS: SkinTone[] = ['porcelain', 'sand', 'tan', 'bronze', 'umber', 'ebony'];
+export const HAIRS: HairColor[] = ['black', 'brown', 'blonde', 'red', 'gray', 'silver', 'auburn', 'pink', 'blue', 'mint', 'lavender'];
+export const HAIR_STYLES: HairStyle[] = ['short', 'crop', 'long', 'wavy', 'curly', 'bun', 'ponytail', 'mohawk', 'bald', 'afro', 'pixie', 'braids'];
+export const SKINS: SkinTone[] = ['porcelain', 'sand', 'tan', 'bronze', 'umber', 'ebony'];
+export const EYE_COLORS: EyeColor[] = ['brown', 'blue', 'green', 'hazel', 'gray', 'amber', 'violet'];
+export const EYE_SHAPES: EyeShape[] = ['round', 'almond', 'narrow', 'wide'];
+export const BROWS: BrowShape[] = ['soft', 'thick', 'arched', 'thin'];
+export const FACIAL_HAIRS: FacialHair[] = ['none', 'stubble', 'goatee', 'mustache', 'beard', 'fullBeard'];
+export const GLASSES_OPTIONS: Glasses[] = ['none', 'round', 'square', 'sunglasses', 'reading'];
+export const OUTFITS: Outfit[] = ['casual', 'hoodie', 'tshirt', 'dress', 'suit', 'jersey', 'labCoat', 'fitness', 'crown', 'goth'];
 
 export function randomAvatar(gender: Gender): AvatarLook {
   return {
     hair: pick(HAIRS),
+    hairStyle: pick(HAIR_STYLES.filter((s) => s !== 'bald')),
     skin: pick(SKINS),
     gender,
+    eyeColor: pick(EYE_COLORS),
+    eyeShape: pick(EYE_SHAPES),
+    brow: pick(BROWS),
+    facialHair: gender === 'male' && Math.random() < 0.35 ? pick(FACIAL_HAIRS) : 'none',
+    glasses: Math.random() < 0.2 ? pick(GLASSES_OPTIONS) : 'none',
+    earrings: Math.random() < 0.3 ? pick(['studs', 'hoops', 'drops'] as const) : 'none',
+    lipstick: gender !== 'male' && Math.random() < 0.4 ? pick(['pink', 'red', 'plum', 'nude'] as const) : 'none',
+    freckles: Math.random() < 0.25,
+    blush: false,
+    tattoo: false,
+    piercing: Math.random() < 0.1,
+    outfit: 'casual',
     accessory: 'none',
   };
 }
@@ -94,12 +130,21 @@ export function createCharacter(opts: NewLifeOptions): Character {
     wealth === 'poor' ? rangeInt(0, 200) : wealth === 'rich' ? rangeInt(50000, 250000) : rangeInt(500, 8000);
   if (opts.powers.fortuneSeed) cash = Math.max(cash, 1_000_000);
 
-  const avatar: AvatarLook = {
-    hair: opts.hair ?? pick(HAIRS),
-    skin: opts.skin ?? pick(SKINS),
-    gender,
-    accessory: 'none',
-  };
+  const baseAvatar: AvatarLook = opts.fullAvatar
+    ? { ...opts.fullAvatar, gender }
+    : {
+        ...randomAvatar(gender),
+        ...(opts.hair ? { hair: opts.hair } : {}),
+        ...(opts.skin ? { skin: opts.skin } : {}),
+        ...(opts.hairStyle ? { hairStyle: opts.hairStyle } : {}),
+        ...(opts.eyeColor ? { eyeColor: opts.eyeColor } : {}),
+        ...(opts.eyeShape ? { eyeShape: opts.eyeShape } : {}),
+        ...(opts.brow ? { brow: opts.brow } : {}),
+        ...(opts.facialHair ? { facialHair: opts.facialHair } : {}),
+        ...(opts.glasses ? { glasses: opts.glasses } : {}),
+        ...(opts.outfit ? { outfit: opts.outfit } : {}),
+      };
+  const avatar: AvatarLook = baseAvatar;
 
   const motherFirst = randomFirstName('female');
   const fatherFirst = randomFirstName('male');
@@ -110,7 +155,7 @@ export function createCharacter(opts: NewLifeOptions): Character {
     age: rangeInt(22, 44),
     alive: true,
     bond: rangeInt(40, 90),
-    avatar: { hair: pick(HAIRS), skin: avatar.skin, gender: 'female', accessory: 'none' },
+    avatar: { ...randomAvatar('female'), skin: avatar.skin },
     stats: makeRelStats(),
     isBlood: true,
   };
@@ -121,7 +166,7 @@ export function createCharacter(opts: NewLifeOptions): Character {
     age: rangeInt(24, 50),
     alive: true,
     bond: rangeInt(30, 85),
-    avatar: { hair: pick(HAIRS), skin: avatar.skin, gender: 'male', accessory: 'none' },
+    avatar: { ...randomAvatar('male'), skin: avatar.skin },
     stats: makeRelStats(),
     isBlood: true,
   };
@@ -137,7 +182,7 @@ export function createCharacter(opts: NewLifeOptions): Character {
       age: rangeInt(0, 18),
       alive: true,
       bond: rangeInt(20, 90),
-      avatar: { hair: pick(HAIRS), skin: avatar.skin, gender: sg, accessory: 'none' },
+      avatar: { ...randomAvatar(sg), skin: avatar.skin },
       stats: makeRelStats(),
       isBlood: true,
     });

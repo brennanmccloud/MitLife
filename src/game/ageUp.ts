@@ -4,6 +4,7 @@ import { getCountry } from '../data/countries';
 import { pickRandomEvent, type EventContext, type EventDef } from '../data/events';
 import { chance, clamp, pick, rangeInt, uid } from '../utils/rand';
 import { randomFirstName } from '../data/names';
+import { randomAvatar } from './createCharacter';
 
 export interface AgeResult {
   pendingEvent: EventDef | null;
@@ -160,7 +161,7 @@ function deliverBabies(c: Character, partner: Relationship): void {
       age: 0,
       alive: true,
       bond: 80,
-      avatar: { hair: pick(['black', 'brown', 'blonde', 'red']), skin: c.avatar.skin, gender: g, accessory: 'none' },
+      avatar: (() => { const a = randomAvatar(g); return { ...a, skin: c.avatar.skin }; })(),
       stats: {
         looks: clamp((c.core.appearance + partner.stats.looks) / 2 + rangeInt(-10, 10)),
         intelligence: clamp((c.core.intelligence + partner.stats.intelligence) / 2 + rangeInt(-10, 10)),

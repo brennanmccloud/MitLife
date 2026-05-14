@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import type { Gender, HairColor, HiddenStats, SkinTone } from '../types/Character';
+import { useMemo, useState } from 'react';
+import type { AvatarLook, Gender, HiddenStats } from '../types/Character';
 import { COUNTRIES } from '../data/countries';
-import { CharacterAvatar } from '../components/CharacterAvatar';
+import { AvatarEditor } from '../components/AvatarEditor';
+import { randomAvatar } from '../game/createCharacter';
 
-const HAIRS: HairColor[] = ['black', 'brown', 'blonde', 'red', 'gray', 'pink', 'blue'];
-const SKINS: SkinTone[] = ['porcelain', 'sand', 'tan', 'bronze', 'umber', 'ebony'];
 const TALENTS: { key: keyof HiddenStats; label: string; icon: string }[] = [
   { key: 'crimeTalent', label: 'Crime', icon: '🦹' },
   { key: 'musicTalent', label: 'Music', icon: '🎵' },
@@ -36,8 +35,7 @@ export interface NewLifeForm {
   lastName: string;
   gender: Gender;
   country: string;
-  hair: HairColor;
-  skin: SkinTone;
+  avatar: AvatarLook;
   wealth: 'poor' | 'middle' | 'rich';
   talent?: keyof HiddenStats;
   custom: Record<string, number>;
@@ -53,13 +51,13 @@ type Mode = 'random' | 'custom' | 'creator';
 
 export function NewLifeScreen({ onBegin, onBack }: Props) {
   const [mode, setMode] = useState<Mode>('random');
+  const initialAvatar = useMemo(() => randomAvatar('female'), []);
   const [form, setForm] = useState<NewLifeForm>({
     firstName: '',
     lastName: '',
     gender: 'female',
     country: COUNTRIES[0].name,
-    hair: 'brown',
-    skin: 'sand',
+    avatar: initialAvatar,
     wealth: 'middle',
     talent: undefined,
     custom: {},
@@ -93,156 +91,116 @@ export function NewLifeScreen({ onBegin, onBack }: Props) {
       </div>
 
       <div className="flex-1 px-4 pt-4 pb-28 overflow-y-auto space-y-4">
-        <div className="card flex items-center gap-4">
-          <CharacterAvatar
-            look={{ hair: form.hair, skin: form.skin, gender: form.gender, accessory: 'none' }}
-            age={0}
-            size={88}
-          />
-          <div className="flex-1">
-            <div className="text-xs text-slate-500 font-bold">Preview</div>
-            <div className="font-extrabold text-slate-800">
-              {form.firstName || 'Baby'} {form.lastName || country.name.split(' ')[0]}
+        <div className="card">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-mit-700 mb-1">Identity</div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs font-bold text-slate-600">
+              First name
+              <input
+                type="text"
+                value={form.firstName}
+                onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none font-normal text-slate-800"
+                placeholder="(random)"
+              />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Last name
+              <input
+                type="text"
+                value={form.lastName}
+                onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none font-normal text-slate-800"
+                placeholder="(random)"
+              />
+            </label>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-xs font-bold text-slate-600 mb-1">Gender</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(['female', 'male', 'nonbinary'] as Gender[]).map((g) => (
+                <button
+                  key={g}
+                  className={`py-2 rounded-xl text-sm font-bold ${
+                    form.gender === g ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                  onClick={() => setForm((f) => ({ ...f, gender: g, avatar: { ...f.avatar, gender: g } }))}
+                >
+                  {g === 'female' ? '♀ Female' : g === 'male' ? '♂ Male' : '⚧ Nonbinary'}
+                </button>
+              ))}
             </div>
-            <div className="text-xs text-slate-500">
-              {country.flag} {country.name} · {country.vibe}
+          </div>
+
+          <div className="mt-3">
+            <div className="text-xs font-bold text-slate-600 mb-1">Country</div>
+            <select
+              value={form.country}
+              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none"
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </select>
+            <div className="text-[11px] text-slate-500 mt-1">{country.vibe}</div>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-xs font-bold text-slate-600 mb-1">Family wealth</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(['poor', 'middle', 'rich'] as const).map((w) => (
+                <button
+                  key={w}
+                  className={`py-2 rounded-xl text-sm font-bold capitalize ${
+                    form.wealth === w ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                  onClick={() => setForm((f) => ({ ...f, wealth: w }))}
+                >
+                  {w === 'poor' ? '🪙 Poor' : w === 'middle' ? '💼 Middle' : '💎 Rich'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-xs font-bold text-slate-600 mb-1">Special talent (optional)</div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                className={`py-2 rounded-xl text-xs font-bold ${!form.talent ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'}`}
+                onClick={() => setForm((f) => ({ ...f, talent: undefined }))}
+              >
+                None
+              </button>
+              {TALENTS.map((t) => (
+                <button
+                  key={t.key}
+                  className={`py-2 rounded-xl text-xs font-bold ${
+                    form.talent === t.key ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                  onClick={() => setForm((f) => ({ ...f, talent: t.key }))}
+                >
+                  <div className="text-lg leading-none">{t.icon}</div>
+                  {t.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {mode !== 'random' && (
-          <div className="card space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <label className="text-xs font-bold text-slate-600">
-                First name
-                <input
-                  type="text"
-                  value={form.firstName}
-                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none font-normal text-slate-800"
-                  placeholder="(random)"
-                />
-              </label>
-              <label className="text-xs font-bold text-slate-600">
-                Last name
-                <input
-                  type="text"
-                  value={form.lastName}
-                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none font-normal text-slate-800"
-                  placeholder="(random)"
-                />
-              </label>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Gender</div>
-              <div className="grid grid-cols-3 gap-2">
-                {(['female', 'male', 'nonbinary'] as Gender[]).map((g) => (
-                  <button
-                    key={g}
-                    className={`py-2 rounded-xl text-sm font-bold ${
-                      form.gender === g ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                    onClick={() => setForm((f) => ({ ...f, gender: g }))}
-                  >
-                    {g === 'female' ? '♀ Female' : g === 'male' ? '♂ Male' : '⚧ Nonbinary'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Country</div>
-              <select
-                value={form.country}
-                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-mit-400 outline-none"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.flag} {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Hair</div>
-              <div className="flex flex-wrap gap-2">
-                {HAIRS.map((h) => (
-                  <button
-                    key={h}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold capitalize ${
-                      form.hair === h ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                    onClick={() => setForm((f) => ({ ...f, hair: h }))}
-                  >
-                    {h}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Skin</div>
-              <div className="flex flex-wrap gap-2">
-                {SKINS.map((s) => (
-                  <button
-                    key={s}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold capitalize ${
-                      form.skin === s ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                    onClick={() => setForm((f) => ({ ...f, skin: s }))}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Family wealth</div>
-              <div className="grid grid-cols-3 gap-2">
-                {(['poor', 'middle', 'rich'] as const).map((w) => (
-                  <button
-                    key={w}
-                    className={`py-2 rounded-xl text-sm font-bold capitalize ${
-                      form.wealth === w ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                    onClick={() => setForm((f) => ({ ...f, wealth: w }))}
-                  >
-                    {w}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-600 mb-1">Special talent (optional)</div>
-              <div className="grid grid-cols-5 gap-2">
-                <button
-                  className={`py-2 rounded-xl text-xs font-bold ${!form.talent ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'}`}
-                  onClick={() => setForm((f) => ({ ...f, talent: undefined }))}
-                >
-                  None
-                </button>
-                {TALENTS.map((t) => (
-                  <button
-                    key={t.key}
-                    className={`py-2 rounded-xl text-xs font-bold ${
-                      form.talent === t.key ? 'bg-mit-500 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                    onClick={() => setForm((f) => ({ ...f, talent: t.key }))}
-                  >
-                    {t.icon}
-                    <div>{t.label}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="card">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-mit-700 mb-2">Appearance</div>
+          <AvatarEditor
+            look={form.avatar}
+            age={1}
+            onChange={(next) => setForm((f) => ({ ...f, avatar: { ...next, gender: f.gender } }))}
+            onRandomize={() => setForm((f) => ({ ...f, avatar: { ...randomAvatar(f.gender) } }))}
+            compact
+          />
+        </div>
 
         {mode === 'creator' && (
           <div className="card space-y-3">
