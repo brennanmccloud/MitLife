@@ -1,6 +1,7 @@
 import type { Character } from '../types/Character';
 import type { PowerFlags } from '../types/GameState';
 import { DEFAULT_POWERS } from '../types/GameState';
+import { normalizeAvatar } from '../components/CharacterAvatar';
 
 const KEY = 'mitlife:v1';
 const POWERS_KEY = 'mitlife:powers:v1';
@@ -9,6 +10,17 @@ export interface SaveBlob {
   character: Character | null;
   history: Character[];
   savedAt: number;
+}
+
+function migrateCharacter(c: Character | null | undefined): Character | null {
+  if (!c) return null;
+  c.avatar = normalizeAvatar(c.avatar);
+  if (Array.isArray(c.relationships)) {
+    for (const r of c.relationships) {
+      r.avatar = normalizeAvatar(r.avatar);
+    }
+  }
+  return c;
 }
 
 export function saveGame(blob: SaveBlob): void {
@@ -23,7 +35,12 @@ export function loadGame(): SaveBlob | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SaveBlob;
+    const parsed = JSON.parse(raw) as SaveBlob;
+    parsed.character = migrateCharacter(parsed.character);
+    if (Array.isArray(parsed.history)) {
+      parsed.history = parsed.history.map((c) => migrateCharacter(c)!).filter(Boolean);
+    }
+    return parsed;
   } catch {
     return null;
   }
