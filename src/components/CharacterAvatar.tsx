@@ -218,38 +218,83 @@ function HairFront({ style, color, stage, rx, ry }: { style: HairStyle; color: s
     />
   );
 
+  // CROP overrides the cap entirely with a tight, flat crew-cut shape.
+  if (style === 'crop') {
+    return (
+      <g>
+        <path
+          d={`M ${leftX + 3} ${browLine}
+              L ${leftX + 4} ${top + 4}
+              Q ${HEAD_CX} ${top + 2} ${rightX - 4} ${top + 4}
+              L ${rightX - 3} ${browLine}
+              Q ${HEAD_CX} ${browLine + 4} ${leftX + 3} ${browLine} Z`}
+          fill={color}
+        />
+        {/* shaved-side suggestion: short stubble band above the temples */}
+        <line x1={leftX + 1} y1={browLine + 2} x2={leftX + 4} y2={browLine + 2} stroke={color} strokeWidth={1.5} opacity="0.45" />
+        <line x1={rightX - 4} y1={browLine + 2} x2={rightX - 1} y2={browLine + 2} stroke={color} strokeWidth={1.5} opacity="0.45" />
+      </g>
+    );
+  }
+
   // Style-specific extras drawn on top of the cap
   let extras: JSX.Element | null = null;
   switch (style) {
-    case 'crop':
-      extras = null;
-      break;
     case 'short':
+      // classic rounded cap, no extras
       extras = null;
       break;
     case 'pixie':
-      // small swept fringe across forehead
+      // single sweeping fringe across the forehead
       extras = (
         <path
-          d={`M ${leftX} ${browLine + 1} Q ${HEAD_CX - 2} ${browLine + 6} ${HEAD_CX + 6} ${browLine + 2}`}
+          d={`M ${leftX + 1} ${browLine + 1} Q ${HEAD_CX - 2} ${browLine + 6} ${HEAD_CX + 8} ${browLine + 1}`}
           stroke={color}
-          strokeWidth={3}
+          strokeWidth={3.4}
           fill="none"
           strokeLinecap="round"
         />
       );
       break;
     case 'long':
-    case 'wavy':
-      // soft side fringe peek
+      // heavy blunt bangs straight across
       extras = (
         <path
-          d={`M ${HEAD_CX - rx + 4} ${browLine} Q ${HEAD_CX - 6} ${browLine + 4} ${HEAD_CX + 4} ${browLine + 2}`}
-          stroke={color}
-          strokeWidth={3}
-          fill="none"
-          strokeLinecap="round"
+          d={`M ${leftX + 2} ${browLine - 1}
+              L ${rightX - 2} ${browLine - 1}
+              L ${rightX - 4} ${browLine + 7}
+              L ${leftX + 4} ${browLine + 7} Z`}
+          fill={color}
         />
+      );
+      break;
+    case 'wavy':
+      // curtain bangs parted in the middle, with wavy outer edge
+      extras = (
+        <g fill={color}>
+          <path
+            d={`M ${leftX + 2} ${browLine - 1}
+                Q ${HEAD_CX - 8} ${browLine + 6} ${HEAD_CX - 1} ${browLine + 8}
+                Q ${HEAD_CX - 4} ${browLine + 3} ${leftX + 1} ${browLine + 2} Z`}
+          />
+          <path
+            d={`M ${rightX - 2} ${browLine - 1}
+                Q ${HEAD_CX + 8} ${browLine + 6} ${HEAD_CX + 1} ${browLine + 8}
+                Q ${HEAD_CX + 4} ${browLine + 3} ${rightX - 1} ${browLine + 2} Z`}
+          />
+          {/* scalloped wave hint at the very top */}
+          <path
+            d={`M ${leftX + 4} ${top + 1}
+                Q ${leftX + 8} ${top - 2} ${leftX + 12} ${top + 1}
+                Q ${HEAD_CX - 4} ${top - 2} ${HEAD_CX} ${top + 1}
+                Q ${HEAD_CX + 4} ${top - 2} ${HEAD_CX + 8} ${top + 1}
+                Q ${rightX - 8} ${top - 2} ${rightX - 4} ${top + 1}`}
+            stroke={color}
+            strokeWidth={1.4}
+            fill="none"
+            opacity="0.6"
+          />
+        </g>
       );
       break;
     case 'curly':
