@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type {
   AvatarLook,
   BrowShape,
@@ -65,16 +66,26 @@ const EYE_HEX: Record<EyeColor, string> = {
   violet: '#8b5cf6',
 };
 
-export function AvatarEditor({ look, age = 18, onChange, onRandomize, compact }: Props) {
+export function AvatarEditor({ look, age = 22, onChange, onRandomize, compact }: Props) {
   const set = <K extends keyof AvatarLook>(k: K, v: AvatarLook[K]) => onChange({ ...look, [k]: v });
+  const [previewAge, setPreviewAge] = useState<number>(age);
 
   return (
     <div className="space-y-3">
       <div className="card flex items-center gap-3 bg-gradient-to-br from-white to-mit-50">
-        <CharacterAvatar look={look} age={age} size={compact ? 84 : 110} />
+        <CharacterAvatar look={look} age={previewAge} size={compact ? 96 : 120} />
         <div className="flex-1 text-xs text-slate-500">
           <div className="font-bold text-slate-700 text-sm">Live preview</div>
-          <div>Showing at age {age}</div>
+          <div>Showing at age {previewAge}</div>
+          <input
+            type="range"
+            min={0}
+            max={90}
+            value={previewAge}
+            onChange={(e) => setPreviewAge(Number(e.target.value))}
+            className="w-full accent-mit-500 mt-2"
+            aria-label="Preview age"
+          />
           {onRandomize && (
             <button
               onClick={onRandomize}

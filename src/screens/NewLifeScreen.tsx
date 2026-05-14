@@ -195,7 +195,7 @@ export function NewLifeScreen({ onBegin, onBack }: Props) {
           <div className="text-[11px] font-bold uppercase tracking-wider text-mit-700 mb-2">Appearance</div>
           <AvatarEditor
             look={form.avatar}
-            age={1}
+            age={22}
             onChange={(next) => setForm((f) => ({ ...f, avatar: { ...next, gender: f.gender } }))}
             onRandomize={() => setForm((f) => ({ ...f, avatar: { ...randomAvatar(f.gender) } }))}
             compact

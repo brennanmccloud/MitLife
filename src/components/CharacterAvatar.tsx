@@ -139,114 +139,186 @@ function headSize(stage: ReturnType<typeof stageOf>) {
 
 function HairBack({ style, color, stage, rx, ry }: { style: HairStyle; color: string; stage: ReturnType<typeof stageOf>; rx: number; ry: number }) {
   if (style === 'bald' || stage === 'baby') return null;
-  const cy = HEAD_CY;
+  const chin = HEAD_CY + ry;
+  // Side-lock helper: a hair lock hanging at the side of the face/neck.
+  const sideLock = (side: 1 | -1, length: number) => {
+    const x = HEAD_CX + side * (rx - 1);
+    return (
+      <path
+        d={`M ${x - 4} ${HEAD_CY - 2}
+            Q ${x + side * 4} ${HEAD_CY + 4} ${x + side * 2} ${chin + length}
+            Q ${x - side * 2} ${chin + length - 2} ${x - 6} ${HEAD_CY + 6}
+            Q ${x - 8} ${HEAD_CY - 2} ${x - 4} ${HEAD_CY - 2} Z`}
+        fill={color}
+      />
+    );
+  };
   switch (style) {
     case 'long':
-      return <ellipse cx={HEAD_CX} cy={cy + 8} rx={rx + 6} ry={ry + 10} fill={color} />;
+      return (
+        <g fill={color}>
+          <ellipse cx={HEAD_CX} cy={HEAD_CY - 1} rx={rx + 2} ry={ry + 1} />
+          {sideLock(-1, 18)}
+          {sideLock(1, 18)}
+        </g>
+      );
     case 'wavy':
-      return <ellipse cx={HEAD_CX} cy={cy + 4} rx={rx + 4} ry={ry + 6} fill={color} />;
+      return (
+        <g fill={color}>
+          <ellipse cx={HEAD_CX} cy={HEAD_CY - 1} rx={rx + 2} ry={ry + 1} />
+          {sideLock(-1, 8)}
+          {sideLock(1, 8)}
+        </g>
+      );
     case 'ponytail':
       return (
         <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={cy - 4} rx={rx + 2} ry={ry - 4} />
-          <ellipse cx={HEAD_CX + rx + 2} cy={cy + 4} rx={4} ry={11} transform={`rotate(20 ${HEAD_CX + rx + 2} ${cy + 4})`} />
+          <ellipse cx={HEAD_CX} cy={HEAD_CY - 4} rx={rx + 1} ry={ry - 4} />
+          <ellipse cx={HEAD_CX + rx + 4} cy={HEAD_CY + 4} rx={4} ry={12} transform={`rotate(22 ${HEAD_CX + rx + 4} ${HEAD_CY + 4})`} />
         </g>
       );
     case 'braids':
       return (
         <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={cy - 2} rx={rx + 2} ry={ry - 4} />
-          <rect x={HEAD_CX - rx - 5} y={cy} width={5} height={22} rx={2.5} />
-          <rect x={HEAD_CX + rx} y={cy} width={5} height={22} rx={2.5} />
+          <ellipse cx={HEAD_CX} cy={HEAD_CY - 2} rx={rx + 1} ry={ry - 2} />
+          <rect x={HEAD_CX - rx - 3} y={HEAD_CY + 2} width={5} height={ry + 14} rx={2.5} />
+          <rect x={HEAD_CX + rx - 2} y={HEAD_CY + 2} width={5} height={ry + 14} rx={2.5} />
         </g>
       );
     case 'afro':
-      return <circle cx={HEAD_CX} cy={cy - 2} r={rx + 8} fill={color} />;
+      // wide and tall but never extends below the chin (no beard halo)
+      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 4} rx={rx + 9} ry={ry - 1} fill={color} />;
     case 'bun':
-      return (
-        <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={cy - 4} rx={rx + 1} ry={ry - 6} />
-        </g>
-      );
+      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 2} rx={rx + 1} ry={ry - 4} fill={color} />;
     case 'mohawk':
       return null;
     default:
-      return <ellipse cx={HEAD_CX} cy={cy - 4} rx={rx + 1} ry={ry - 6} fill={color} />;
+      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 3} rx={rx + 1} ry={ry - 4} fill={color} />;
   }
 }
 
 function HairFront({ style, color, stage, rx, ry }: { style: HairStyle; color: string; stage: ReturnType<typeof stageOf>; rx: number; ry: number }) {
   if (style === 'bald' || stage === 'baby') return null;
   const top = HEAD_CY - ry;
+  const browLine = HEAD_CY - ry / 4;
   const leftX = HEAD_CX - rx;
   const rightX = HEAD_CX + rx;
-  const browLine = HEAD_CY - ry / 3;
   const dyeStreak = color === '#f472b6' || color === '#60a5fa' || color === '#86efac' || color === '#c4b5fd';
-  let shape: JSX.Element;
+
+  // Standard cap: a filled hair shape covering the top of the head
+  // from the brow up over the crown. Drawn as half-ellipse-ish shape
+  // sitting on top of the head ellipse so no thin stripes anymore.
+  const cap = (extend: number = 0) => (
+    <path
+      d={`M ${leftX - extend} ${browLine + 1}
+          Q ${leftX - extend} ${top - extend} ${HEAD_CX} ${top - extend - 1}
+          Q ${rightX + extend} ${top - extend} ${rightX + extend} ${browLine + 1}
+          Q ${HEAD_CX} ${browLine + 5} ${leftX - extend} ${browLine + 1} Z`}
+      fill={color}
+    />
+  );
+
+  // Style-specific extras drawn on top of the cap
+  let extras: JSX.Element | null = null;
   switch (style) {
     case 'crop':
-      shape = <path d={`M ${leftX} ${browLine} Q ${HEAD_CX} ${top - 2} ${rightX} ${browLine} L ${rightX} ${browLine - 4} Q ${HEAD_CX} ${top + 2} ${leftX} ${browLine - 4} Z`} fill={color} />;
+      extras = null;
       break;
     case 'short':
-      shape = <path d={`M ${leftX - 2} ${browLine} Q ${HEAD_CX} ${top - 4} ${rightX + 2} ${browLine} Q ${HEAD_CX} ${top + 4} ${leftX - 2} ${browLine} Z`} fill={color} />;
+      extras = null;
       break;
     case 'pixie':
-      shape = <path d={`M ${leftX} ${browLine - 1} Q ${HEAD_CX - 2} ${top} ${HEAD_CX + 4} ${top + 2} Q ${rightX} ${browLine - 2} ${rightX} ${browLine + 1} Q ${HEAD_CX} ${top + 6} ${leftX} ${browLine + 1} Z`} fill={color} />;
+      // small swept fringe across forehead
+      extras = (
+        <path
+          d={`M ${leftX} ${browLine + 1} Q ${HEAD_CX - 2} ${browLine + 6} ${HEAD_CX + 6} ${browLine + 2}`}
+          stroke={color}
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+        />
+      );
       break;
     case 'long':
-      shape = <path d={`M ${leftX - 3} ${browLine + 2} Q ${HEAD_CX} ${top - 3} ${rightX + 3} ${browLine + 2} Q ${HEAD_CX} ${top + 3} ${leftX - 3} ${browLine + 2} Z`} fill={color} />;
-      break;
     case 'wavy':
-      shape = (
-        <g fill={color}>
-          <path d={`M ${leftX - 2} ${browLine + 1} Q ${leftX + 4} ${top + 1} ${leftX + 9} ${browLine - 2} Q ${HEAD_CX} ${top - 3} ${rightX - 9} ${browLine - 2} Q ${rightX - 4} ${top + 1} ${rightX + 2} ${browLine + 1} Q ${HEAD_CX} ${top + 4} ${leftX - 2} ${browLine + 1} Z`} />
-        </g>
+      // soft side fringe peek
+      extras = (
+        <path
+          d={`M ${HEAD_CX - rx + 4} ${browLine} Q ${HEAD_CX - 6} ${browLine + 4} ${HEAD_CX + 4} ${browLine + 2}`}
+          stroke={color}
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+        />
       );
       break;
     case 'curly':
-      shape = (
+      extras = (
         <g fill={color}>
-          <circle cx={leftX + 2} cy={top + 4} r={5} />
-          <circle cx={leftX + 8} cy={top - 1} r={5} />
-          <circle cx={HEAD_CX - 2} cy={top - 3} r={5} />
-          <circle cx={HEAD_CX + 6} cy={top - 1} r={5} />
-          <circle cx={rightX - 4} cy={top + 1} r={5} />
-          <circle cx={rightX - 1} cy={top + 6} r={5} />
+          <circle cx={leftX + 4} cy={top + 4} r={4.5} />
+          <circle cx={leftX + 11} cy={top - 1} r={4.5} />
+          <circle cx={HEAD_CX - 2} cy={top - 3} r={4.5} />
+          <circle cx={HEAD_CX + 7} cy={top - 1} r={4.5} />
+          <circle cx={rightX - 5} cy={top + 1} r={4.5} />
+          <circle cx={rightX - 2} cy={top + 6} r={4.5} />
         </g>
       );
       break;
     case 'bun':
-      shape = (
-        <g fill={color}>
-          <path d={`M ${leftX} ${browLine} Q ${HEAD_CX} ${top + 1} ${rightX} ${browLine} Q ${HEAD_CX} ${top + 5} ${leftX} ${browLine} Z`} />
-          <circle cx={HEAD_CX} cy={top - 5} r={6} />
-        </g>
-      );
+      extras = <circle cx={HEAD_CX} cy={top - 5} r={6} fill={color} />;
       break;
     case 'ponytail':
-      shape = <path d={`M ${leftX} ${browLine} Q ${HEAD_CX} ${top + 1} ${rightX} ${browLine} Q ${HEAD_CX} ${top + 5} ${leftX} ${browLine} Z`} fill={color} />;
+      // slick-back: just the cap, no fringe
+      extras = null;
       break;
     case 'mohawk':
-      shape = (
+      // narrow strip down the center, plus a tall spike
+      return (
         <g fill={color}>
-          <rect x={HEAD_CX - 6} y={top - 6} width={12} height={ry + 4} rx={2} />
-          <rect x={HEAD_CX - 4} y={top - 10} width={8} height={6} />
+          <rect x={HEAD_CX - 5} y={top - 2} width={10} height={ry + 4} rx={2} />
+          <path
+            d={`M ${HEAD_CX - 4} ${top - 2}
+                L ${HEAD_CX - 4} ${top - 12}
+                L ${HEAD_CX + 4} ${top - 12}
+                L ${HEAD_CX + 4} ${top - 2} Z`}
+          />
         </g>
       );
-      break;
     case 'afro':
-      shape = <path d={`M ${leftX - 4} ${browLine + 4} Q ${HEAD_CX} ${top - 12} ${rightX + 4} ${browLine + 4} Q ${HEAD_CX} ${top - 4} ${leftX - 4} ${browLine + 4} Z`} fill={color} />;
+      // afro is mostly the back ellipse — add a soft front halo
+      extras = (
+        <ellipse
+          cx={HEAD_CX}
+          cy={top + 1}
+          rx={rx + 6}
+          ry={6}
+          fill={color}
+        />
+      );
       break;
     case 'braids':
-      shape = <path d={`M ${leftX} ${browLine} Q ${HEAD_CX} ${top + 1} ${rightX} ${browLine} Q ${HEAD_CX} ${top + 5} ${leftX} ${browLine} Z`} fill={color} />;
+      // tight flat top, parted in the middle
+      extras = (
+        <line x1={HEAD_CX} y1={top + 1} x2={HEAD_CX} y2={browLine} stroke="rgba(0,0,0,0.18)" strokeWidth={0.8} />
+      );
       break;
     default:
-      shape = <path d={`M ${leftX} ${browLine} Q ${HEAD_CX} ${top - 1} ${rightX} ${browLine} Q ${HEAD_CX} ${top + 4} ${leftX} ${browLine} Z`} fill={color} />;
+      extras = null;
   }
+
   return (
     <g>
-      {shape}
-      {dyeStreak && <path d={`M ${HEAD_CX - 5} ${browLine - 3} Q ${HEAD_CX - 3} ${browLine + 2} ${HEAD_CX - 7} ${browLine + 6}`} stroke="#fff" strokeWidth="1.6" fill="none" opacity="0.55" />}
+      {cap()}
+      {extras}
+      {dyeStreak && (
+        <path
+          d={`M ${HEAD_CX - 6} ${browLine - 2} Q ${HEAD_CX - 4} ${browLine + 4} ${HEAD_CX - 8} ${browLine + 8}`}
+          stroke="#fff"
+          strokeWidth={1.6}
+          fill="none"
+          opacity="0.55"
+        />
+      )}
     </g>
   );
 }
