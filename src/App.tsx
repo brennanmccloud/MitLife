@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Character, Gender, HiddenStats } from './types/Character';
 import type { GameState, PendingEvent, PowerFlags, Screen, ToastMessage } from './types/GameState';
