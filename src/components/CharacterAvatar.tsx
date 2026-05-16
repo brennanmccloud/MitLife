@@ -11,6 +11,7 @@ import type {
   Outfit as OutfitName,
   SkinTone,
 } from '../types/Character';
+import { HAIR_SPRITES } from './hairSprites';
 
 const SKIN_HEX: Record<SkinTone, { base: string; shade: string }> = {
   porcelain: { base: '#fbe4d2', shade: '#e8c4a8' },
@@ -118,254 +119,16 @@ function stageOf(age: number) {
 }
 
 function headSize(stage: ReturnType<typeof stageOf>) {
-  // Subtle differences so kids look chubbier without changing the layout anchors.
+  // Non-baby heads share one fixed size so the pre-drawn hair sprites
+  // (designed for rx 21 / ry 22.5) always line up exactly.
   switch (stage) {
     case 'baby':
-      return { rx: 23, ry: 24 };
+      return { rx: 23.5, ry: 24.5 };
     case 'toddler':
       return { rx: 22, ry: 23 };
-    case 'child':
-      return { rx: 21, ry: 22 };
-    case 'teen':
-      return { rx: 20, ry: 22 };
-    case 'adult':
-      return { rx: 20, ry: 22 };
-    case 'older':
-      return { rx: 20, ry: 22 };
-    case 'elder':
-      return { rx: 19, ry: 21 };
-  }
-}
-
-function HairBack({ style, color, stage, rx, ry }: { style: HairStyle; color: string; stage: ReturnType<typeof stageOf>; rx: number; ry: number }) {
-  if (style === 'bald' || stage === 'baby') return null;
-  const chin = HEAD_CY + ry;
-  // Side-lock helper: a hair lock hanging at the side of the face/neck.
-  const sideLock = (side: 1 | -1, length: number) => {
-    const x = HEAD_CX + side * (rx - 1);
-    return (
-      <path
-        d={`M ${x - 4} ${HEAD_CY - 2}
-            Q ${x + side * 4} ${HEAD_CY + 4} ${x + side * 2} ${chin + length}
-            Q ${x - side * 2} ${chin + length - 2} ${x - 6} ${HEAD_CY + 6}
-            Q ${x - 8} ${HEAD_CY - 2} ${x - 4} ${HEAD_CY - 2} Z`}
-        fill={color}
-      />
-    );
-  };
-  switch (style) {
-    case 'long':
-      return (
-        <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={HEAD_CY - 1} rx={rx + 2} ry={ry + 1} />
-          {sideLock(-1, 18)}
-          {sideLock(1, 18)}
-        </g>
-      );
-    case 'wavy':
-      return (
-        <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={HEAD_CY - 1} rx={rx + 2} ry={ry + 1} />
-          {sideLock(-1, 8)}
-          {sideLock(1, 8)}
-        </g>
-      );
-    case 'ponytail':
-      return (
-        <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={HEAD_CY - 4} rx={rx + 1} ry={ry - 4} />
-          <ellipse cx={HEAD_CX + rx + 4} cy={HEAD_CY + 4} rx={4} ry={12} transform={`rotate(22 ${HEAD_CX + rx + 4} ${HEAD_CY + 4})`} />
-        </g>
-      );
-    case 'braids':
-      return (
-        <g fill={color}>
-          <ellipse cx={HEAD_CX} cy={HEAD_CY - 2} rx={rx + 1} ry={ry - 2} />
-          <rect x={HEAD_CX - rx - 3} y={HEAD_CY + 2} width={5} height={ry + 14} rx={2.5} />
-          <rect x={HEAD_CX + rx - 2} y={HEAD_CY + 2} width={5} height={ry + 14} rx={2.5} />
-        </g>
-      );
-    case 'afro':
-      // wide and tall but never extends below the chin (no beard halo)
-      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 4} rx={rx + 9} ry={ry - 1} fill={color} />;
-    case 'bun':
-      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 2} rx={rx + 1} ry={ry - 4} fill={color} />;
-    case 'mohawk':
-      return null;
     default:
-      return <ellipse cx={HEAD_CX} cy={HEAD_CY - 3} rx={rx + 1} ry={ry - 4} fill={color} />;
+      return { rx: 21, ry: 22.5 };
   }
-}
-
-function HairFront({ style, color, stage, rx, ry }: { style: HairStyle; color: string; stage: ReturnType<typeof stageOf>; rx: number; ry: number }) {
-  if (style === 'bald' || stage === 'baby') return null;
-  const top = HEAD_CY - ry;
-  const browLine = HEAD_CY - ry / 4;
-  const leftX = HEAD_CX - rx;
-  const rightX = HEAD_CX + rx;
-  const dyeStreak = color === '#f472b6' || color === '#60a5fa' || color === '#86efac' || color === '#c4b5fd';
-
-  // Standard cap: a filled hair shape covering the top of the head
-  // from the brow up over the crown. Drawn as half-ellipse-ish shape
-  // sitting on top of the head ellipse so no thin stripes anymore.
-  const cap = (extend: number = 0) => (
-    <path
-      d={`M ${leftX - extend} ${browLine + 1}
-          Q ${leftX - extend} ${top - extend} ${HEAD_CX} ${top - extend - 1}
-          Q ${rightX + extend} ${top - extend} ${rightX + extend} ${browLine + 1}
-          Q ${HEAD_CX} ${browLine + 5} ${leftX - extend} ${browLine + 1} Z`}
-      fill={color}
-    />
-  );
-
-  // CROP overrides the cap entirely with a tight, flat crew-cut shape.
-  if (style === 'crop') {
-    return (
-      <g>
-        <path
-          d={`M ${leftX + 3} ${browLine}
-              L ${leftX + 4} ${top + 4}
-              Q ${HEAD_CX} ${top + 2} ${rightX - 4} ${top + 4}
-              L ${rightX - 3} ${browLine}
-              Q ${HEAD_CX} ${browLine + 4} ${leftX + 3} ${browLine} Z`}
-          fill={color}
-        />
-        {/* shaved-side suggestion: short stubble band above the temples */}
-        <line x1={leftX + 1} y1={browLine + 2} x2={leftX + 4} y2={browLine + 2} stroke={color} strokeWidth={1.5} opacity="0.45" />
-        <line x1={rightX - 4} y1={browLine + 2} x2={rightX - 1} y2={browLine + 2} stroke={color} strokeWidth={1.5} opacity="0.45" />
-      </g>
-    );
-  }
-
-  // Style-specific extras drawn on top of the cap
-  let extras: JSX.Element | null = null;
-  switch (style) {
-    case 'short':
-      // classic rounded cap, no extras
-      extras = null;
-      break;
-    case 'pixie':
-      // single sweeping fringe across the forehead
-      extras = (
-        <path
-          d={`M ${leftX + 1} ${browLine + 1} Q ${HEAD_CX - 2} ${browLine + 6} ${HEAD_CX + 8} ${browLine + 1}`}
-          stroke={color}
-          strokeWidth={3.4}
-          fill="none"
-          strokeLinecap="round"
-        />
-      );
-      break;
-    case 'long':
-      // heavy blunt bangs straight across
-      extras = (
-        <path
-          d={`M ${leftX + 2} ${browLine - 1}
-              L ${rightX - 2} ${browLine - 1}
-              L ${rightX - 4} ${browLine + 7}
-              L ${leftX + 4} ${browLine + 7} Z`}
-          fill={color}
-        />
-      );
-      break;
-    case 'wavy':
-      // curtain bangs parted in the middle, with wavy outer edge
-      extras = (
-        <g fill={color}>
-          <path
-            d={`M ${leftX + 2} ${browLine - 1}
-                Q ${HEAD_CX - 8} ${browLine + 6} ${HEAD_CX - 1} ${browLine + 8}
-                Q ${HEAD_CX - 4} ${browLine + 3} ${leftX + 1} ${browLine + 2} Z`}
-          />
-          <path
-            d={`M ${rightX - 2} ${browLine - 1}
-                Q ${HEAD_CX + 8} ${browLine + 6} ${HEAD_CX + 1} ${browLine + 8}
-                Q ${HEAD_CX + 4} ${browLine + 3} ${rightX - 1} ${browLine + 2} Z`}
-          />
-          {/* scalloped wave hint at the very top */}
-          <path
-            d={`M ${leftX + 4} ${top + 1}
-                Q ${leftX + 8} ${top - 2} ${leftX + 12} ${top + 1}
-                Q ${HEAD_CX - 4} ${top - 2} ${HEAD_CX} ${top + 1}
-                Q ${HEAD_CX + 4} ${top - 2} ${HEAD_CX + 8} ${top + 1}
-                Q ${rightX - 8} ${top - 2} ${rightX - 4} ${top + 1}`}
-            stroke={color}
-            strokeWidth={1.4}
-            fill="none"
-            opacity="0.6"
-          />
-        </g>
-      );
-      break;
-    case 'curly':
-      extras = (
-        <g fill={color}>
-          <circle cx={leftX + 4} cy={top + 4} r={4.5} />
-          <circle cx={leftX + 11} cy={top - 1} r={4.5} />
-          <circle cx={HEAD_CX - 2} cy={top - 3} r={4.5} />
-          <circle cx={HEAD_CX + 7} cy={top - 1} r={4.5} />
-          <circle cx={rightX - 5} cy={top + 1} r={4.5} />
-          <circle cx={rightX - 2} cy={top + 6} r={4.5} />
-        </g>
-      );
-      break;
-    case 'bun':
-      extras = <circle cx={HEAD_CX} cy={top - 5} r={6} fill={color} />;
-      break;
-    case 'ponytail':
-      // slick-back: just the cap, no fringe
-      extras = null;
-      break;
-    case 'mohawk':
-      // narrow strip down the center, plus a tall spike
-      return (
-        <g fill={color}>
-          <rect x={HEAD_CX - 5} y={top - 2} width={10} height={ry + 4} rx={2} />
-          <path
-            d={`M ${HEAD_CX - 4} ${top - 2}
-                L ${HEAD_CX - 4} ${top - 12}
-                L ${HEAD_CX + 4} ${top - 12}
-                L ${HEAD_CX + 4} ${top - 2} Z`}
-          />
-        </g>
-      );
-    case 'afro':
-      // afro is mostly the back ellipse — add a soft front halo
-      extras = (
-        <ellipse
-          cx={HEAD_CX}
-          cy={top + 1}
-          rx={rx + 6}
-          ry={6}
-          fill={color}
-        />
-      );
-      break;
-    case 'braids':
-      // tight flat top, parted in the middle
-      extras = (
-        <line x1={HEAD_CX} y1={top + 1} x2={HEAD_CX} y2={browLine} stroke="rgba(0,0,0,0.18)" strokeWidth={0.8} />
-      );
-      break;
-    default:
-      extras = null;
-  }
-
-  return (
-    <g>
-      {cap()}
-      {extras}
-      {dyeStreak && (
-        <path
-          d={`M ${HEAD_CX - 6} ${browLine - 2} Q ${HEAD_CX - 4} ${browLine + 4} ${HEAD_CX - 8} ${browLine + 8}`}
-          stroke="#fff"
-          strokeWidth={1.6}
-          fill="none"
-          opacity="0.55"
-        />
-      )}
-    </g>
-  );
 }
 
 function Face({ stage, ry, look }: { stage: ReturnType<typeof stageOf>; ry: number; look: AvatarLook }) {
@@ -596,8 +359,8 @@ export function CharacterAvatar({ look: rawLook, age, size = 96, bg = 'sun' }: P
       {/* Neck (visible above shirt collar, behind head) */}
       <rect x={NECK_LEFT} y={NECK_TOP - 2} width={NECK_RIGHT - NECK_LEFT} height={NECK_BOTTOM - NECK_TOP + 2} fill={skin.shade} />
 
-      {/* Back hair behind head */}
-      <HairBack style={look.hairStyle} color={hairColor} stage={stage} rx={rx} ry={ry} />
+      {/* Back hair behind head — pre-drawn sprite (hidden for babies) */}
+      {stage !== 'baby' && HAIR_SPRITES[look.hairStyle].back(hairColor)}
 
       {/* Ears */}
       {stage !== 'baby' && (
@@ -629,8 +392,8 @@ export function CharacterAvatar({ look: rawLook, age, size = 96, bg = 'sun' }: P
         </g>
       )}
 
-      {/* Front hair on top of head */}
-      <HairFront style={look.hairStyle} color={hairColor} stage={stage} rx={rx} ry={ry} />
+      {/* Front hair on top of head — pre-drawn sprite (hidden for babies) */}
+      {stage !== 'baby' && HAIR_SPRITES[look.hairStyle].front(hairColor)}
 
       {/* Beard */}
       {(stage === 'adult' || stage === 'older' || stage === 'elder') && (
